@@ -19,6 +19,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     var scoreLabel : SKLabelNode?
     var yourScoreLabel : SKLabelNode?
     var finalScoreLabel : SKLabelNode?
+    var playAgainLabel : SKLabelNode?
     
     let coinManCategory : UInt32 = 0x1 << 1
     let coinCategory : UInt32 = 0x1 << 2
@@ -31,8 +32,11 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         
         physicsWorld.contactDelegate = self
         
+        // reference to player in game scene
         coinMan = childNode(withName: "coinMan") as? SKSpriteNode
         coinMan?.physicsBody?.categoryBitMask = coinManCategory
+        
+        // Assigning which object will have contact with player
         coinMan?.physicsBody?.contactTestBitMask = coinCategory | bombCategory
         coinMan?.physicsBody?.collisionBitMask = groundAndCeilCategory
         var coinManRun : [SKTexture] = []
@@ -40,7 +44,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             coinManRun.append(SKTexture(imageNamed: "frame-\(number)"))
         }
         coinMan?.run(SKAction.repeatForever(SKAction.animate(with: coinManRun, timePerFrame: 0.09)))
-        
         
         ceil = childNode(withName: "ceil") as? SKSpriteNode
         ceil?.physicsBody?.categoryBitMask = groundAndCeilCategory
@@ -53,6 +56,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     }
     
     func createGrass() {
+        
         let sizingGrass = SKSpriteNode(imageNamed: "grass")
         let numberOfGrass = Int(size.width / sizingGrass.size.width) + 1
         for number in 0...numberOfGrass {
@@ -77,6 +81,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         }
     }
     
+    // function for creating a new coin and bomb at a chosen time interval
     func startTimers() {
         coinTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true, block: { (timer) in
             self.createCoin()
@@ -90,6 +95,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         
         if scene?.isPaused == false {
+            // Make the player jumps
             coinMan?.physicsBody?.applyForce(CGVector(dx: 0, dy: 10000))
         }
         
@@ -104,6 +110,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                     node.removeFromParent()
                     finalScoreLabel?.removeFromParent()
                     yourScoreLabel?.removeFromParent()
+                    playAgainLabel?.removeFromParent()
                     scene?.isPaused = false
                     scoreLabel?.text = "Score: \(score)"
                     startTimers()
@@ -114,11 +121,16 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     
     func createCoin() {
         let coin = SKSpriteNode(imageNamed: "coin")
+        
+        // Give physical body to the coins
         coin.physicsBody = SKPhysicsBody(rectangleOf: coin.size)
         coin.physicsBody?.affectedByGravity = false
         coin.physicsBody?.categoryBitMask = coinCategory
         coin.physicsBody?.contactTestBitMask = coinManCategory
+        // set coin so it has no collision with others objects in the scene
         coin.physicsBody?.collisionBitMask = 0
+        
+        //add coins to game sceene
         addChild(coin)
         
         let sizingGrass = SKSpriteNode(imageNamed: "grass")
@@ -149,6 +161,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         let maxY = size.height / 2 - bomb.size.height / 2
         let minY = -size.height / 2 + bomb.size.height / 2 + sizingGrass.size.height
         let range = maxY - minY
+        
+        // Generate random height for the bomb to appear with range being the upper bound.
         let bombY = maxY - CGFloat(arc4random_uniform(UInt32(range)))
         
         bomb.position = CGPoint(x: size.width / 2 + bomb.size.width / 2, y: bombY)
@@ -158,9 +172,9 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         bomb.run(SKAction.sequence([moveLeft, SKAction.removeFromParent()]))
     }
     
+    
+    //function to detect contact between two objects in game scene
     func didBegin(_ contact: SKPhysicsContact) {
-        
-        
         
         if contact.bodyA.categoryBitMask == coinCategory {
             contact.bodyA.node?.removeFromParent()
@@ -186,12 +200,14 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     func gameOver() {
         scene?.isPaused = true
         
+        //Stop timer therefore stop generating coin and bomb to game scene
         coinTimer?.invalidate()
         bombTimer?.invalidate()
         
         yourScoreLabel = SKLabelNode(text: "Your Score:")
         yourScoreLabel?.position = CGPoint(x: 0, y: 200)
-        yourScoreLabel?.fontSize = 100
+        yourScoreLabel?.fontSize = 90
+        yourScoreLabel?.fontName = "Comic Sans MS"
         yourScoreLabel?.zPosition = 1
         if yourScoreLabel != nil {
             addChild(yourScoreLabel!)
@@ -199,17 +215,29 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         
         finalScoreLabel = SKLabelNode(text: "\(score)")
         finalScoreLabel?.position = CGPoint(x: 0, y: 0)
-        finalScoreLabel?.fontSize = 200
+        finalScoreLabel?.fontSize = 180
+        finalScoreLabel?.fontName = "Comic Sans MS"
         finalScoreLabel?.zPosition = 1
         if finalScoreLabel != nil {
             addChild(finalScoreLabel!)
         }
         
         let playButton = SKSpriteNode(imageNamed: "play")
-        playButton.position = CGPoint(x: 0, y: -200)
+        playButton.position = CGPoint(x: 0, y: -120)
         playButton.name = "play"
         playButton.zPosition = 1
         addChild(playButton)
+        
+        playAgainLabel = SKLabelNode(text: "Play Again!")
+        playAgainLabel?.position = CGPoint(x: 0, y: -250)
+        playAgainLabel?.fontName = "Comic Sans MS"
+        playAgainLabel?.fontSize = 65.0
+        playAgainLabel?.zPosition = 1
+        if(scene?.isPaused != false){
+            addChild(playAgainLabel!)
+        }
+        
+
     }
     
 }
